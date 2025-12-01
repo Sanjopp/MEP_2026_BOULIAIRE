@@ -35,7 +35,7 @@ docker compose up
 
 ### Accessing the app
 
-The app is will be running at http://localhost:5173
+The app is running at http://localhost:5173
 
 ### Stopping the app
 
