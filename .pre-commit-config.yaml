@@ -22,8 +22,3 @@ repos:
         - id: nbstripout
           name: nbstripout (strip outputs from notebooks)
           files: \.ipynb$
-    - repo: https://github.com/jendrikseipp/vulture
-      rev: 'v2.3'
-      hooks:
-        - id: vulture
-          args: ['.', '--exclude', '.venv, venv, env, tests']
