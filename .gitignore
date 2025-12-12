@@ -1,10 +1,12 @@
-# Virtual environments
 .venv/
 env/
 venv/
 
-# Python cache files
 __pycache__/
 
-# Notebooks
 *.ipynb
+
+data/*.json
+backend/data/*.json
+
+!data/.gitkeep
