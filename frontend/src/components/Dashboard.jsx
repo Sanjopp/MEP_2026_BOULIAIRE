@@ -1,27 +1,30 @@
 import { useEffect, useState } from "react";
-
-const API_BASE = "/api";
+import {
+  fetchTricounts,
+  fetchTricountDetail,
+  createTricount,
+  addUser,
+  deleteUser,
+  addExpense,
+  deleteExpense,
+  deleteTricount,
+  exportExcel,
+} from "../api";
 
 export default function Dashboard({ user, onLogout }) {
-
   const [tricounts, setTricounts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedTricount, setSelectedTricount] = useState(null);
-
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState("");
-
   const [newName, setNewName] = useState("");
-
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
-
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [payerId, setPayerId] = useState("");
   const [participants, setParticipants] = useState([]);
-
   const [splitMode, setSplitMode] = useState("equal");
   const [weights, setWeights] = useState({});
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
@@ -34,11 +37,7 @@ export default function Dashboard({ user, onLogout }) {
     try {
       setLoadingList(true);
       setError("");
-      const res = await fetch(`${API_BASE}/tricounts`);
-      if (!res.ok) {
-        throw new Error("Failed to load tricounts");
-      }
-      const data = await res.json();
+      const data = await fetchTricounts();
       setTricounts(data);
     } catch (e) {
       console.error(e);
@@ -52,25 +51,9 @@ export default function Dashboard({ user, onLogout }) {
     try {
       setLoadingDetail(true);
       setError("");
-      const res = await fetch(`${API_BASE}/tricounts/${id}`);
-      if (!res.ok) {
-        if (res.status === 404) {
-          setSelectedTricount(null);
-          setError("Tricount introuvable (404).");
-          return;
-        }
-        throw new Error("Failed to load tricount detail");
-      }
-      const data = await res.json();
+      const data = await fetchTricountDetail(id);
       setSelectedTricount(data);
       setSelectedId(id);
-
-      setUserName("");
-      setUserEmail("");
-      setDesc("");
-      setAmount("");
-      setPayerId("");
-      setParticipants([]);
     } catch (e) {
       console.error(e);
       setError("Erreur lors du chargement du tricount.");
@@ -81,233 +64,91 @@ export default function Dashboard({ user, onLogout }) {
 
   async function handleCreateTricount(e) {
     e.preventDefault();
-    if (!newName.trim()) return;
-
     try {
-      setError("");
-      const res = await fetch(`${API_BASE}/tricounts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim() }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Erreur création tricount.");
-      }
-
-      const created = await res.json();
+      const created = await createTricount(newName);
       setNewName("");
       await loadTricounts();
       await loadTricountDetail(created.id);
     } catch (e) {
-      console.error(e);
-      setError(e.message || "Erreur lors de la création du tricount.");
+      setError(e.message);
     }
   }
 
   async function handleAddUser(e) {
     e.preventDefault();
-    if (!selectedTricount) return;
-    if (!userName.trim()) return;
-
     try {
-      setError("");
-      const res = await fetch(
-        `${API_BASE}/tricounts/${selectedTricount.id}/users`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: userName.trim(),
-            email: userEmail.trim() || null,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Erreur ajout utilisateur.");
-      }
-
+      await addUser(selectedTricount.id, {
+        name: userName,
+        email: userEmail || null,
+      });
       await loadTricountDetail(selectedTricount.id);
       await loadTricounts();
     } catch (e) {
-      console.error(e);
-      setError(e.message || "Erreur réseau lors de l'ajout utilisateur.");
+      setError(e.message);
     }
-  }
-
-  function toggleParticipant(id) {
-    setParticipants((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
   }
 
   async function handleAddExpense(e) {
-      e.preventDefault();
-      if (!selectedTricount) return;
-
-      if (!desc.trim() || !amount || !payerId || participants.length === 0) {
-        setError("Merci de remplir tous les champs (et au moins un participant).");
-        return;
-      }
-
-      const payload = {
-        description: desc.trim(),
-        amount: parseFloat(amount),
-        payer_id: payerId,
-        participants_ids: participants,
-        weights: {},
-      };
-
-      if (splitMode === "weighted") {
-        const weightMap = {};
-        participants.forEach((uid) => {
-          weightMap[uid] = parseFloat(weights[uid]) || 0;
-        });
-        payload.weights = weightMap;
-      }
-
-      try {
-        setError("");
-        const res = await fetch(
-          `${API_BASE}/tricounts/${selectedTricount.id}/expenses`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
-        );
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "Erreur ajout dépense.");
-        }
-
-        await loadTricountDetail(selectedTricount.id);
-        await loadTricounts();
-
-        setDesc(""); setAmount("");
-      } catch (e) {
-        console.error(e);
-        setError(e.message || "Erreur réseau lors de l'ajout dépense.");
-      }
+    e.preventDefault();
+    try {
+      await addExpense(selectedTricount.id, payload);
+      await loadTricountDetail(selectedTricount.id);
+      await loadTricounts();
+    } catch (e) {
+      setError(e.message);
     }
+  }
 
   async function handleDeleteUser(userId) {
-    if (!selectedId) return;
     if (!window.confirm("Supprimer cet utilisateur ?")) return;
-
     try {
-      setError("");
-      const res = await fetch(
-        `${API_BASE}/tricounts/${selectedId}/users/${userId}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Erreur lors de la suppression.");
-        return;
-      }
-
+      const data = await deleteUser(selectedId, userId);
       setSelectedTricount(data);
       loadTricounts();
     } catch (e) {
-      console.error(e);
-      setError("Erreur réseau suppression utilisateur.");
+      setError(e.message);
     }
   }
 
   async function handleDeleteExpense(expenseId) {
-    if (!selectedId) return;
     if (!window.confirm("Supprimer cette dépense ?")) return;
-
     try {
-      setError("");
-      const res = await fetch(
-        `${API_BASE}/tricounts/${selectedId}/expenses/${expenseId}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Erreur suppression dépense.");
-        return;
-      }
+      const data = await deleteExpense(selectedId, expenseId);
       setSelectedTricount(data);
       loadTricounts();
     } catch (e) {
-      console.error(e);
-      setError("Erreur réseau suppression dépense.");
+      setError(e.message);
+    }
+  }
+
+  async function handleDeleteTricount() {
+    if (!window.confirm("Supprimer ce tricount ?")) return;
+    try {
+      await deleteTricount(selectedTricount.id);
+      setSelectedTricount(null);
+      setSelectedId(null);
+      loadTricounts();
+    } catch (e) {
+      setError(e.message);
     }
   }
 
   async function handleExportExcel() {
-    if (!selectedTricount) return;
-
     try {
-      const res = await fetch(
-        `/api/tricounts/${selectedTricount.id}/export/excel`
-      );
-
-      if (!res.ok) {
-        throw new Error("Export failed");
-      }
-
-      const blob = await res.blob();
+      const blob = await exportExcel(selectedTricount.id);
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${selectedTricount.name || "tricount"}.xlsx`;
-      document.body.appendChild(a);
+      a.download = `${selectedTricount.name}.xlsx`;
       a.click();
-      a.remove();
-
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      console.error(e);
-      setError("Erreur lors de l'export Excel.");
+      setError("Erreur export Excel.");
     }
   }
-  async function handleDeleteTricount() {
-    if (!selectedTricount) return;
-
-    const confirmed = window.confirm(
-      "Êtes-vous sûr de vouloir supprimer ce tricount ? Cette action est définitive."
-    );
-    if (!confirmed) return;
-
-    try {
-      setError("");
-
-      const res = await fetch(
-        `/api/tricounts/${selectedTricount.id}`,
-        { method: "DELETE" }
-      );
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Erreur lors de la suppression du tricount.");
-      }
-
-
-      setSelectedTricount(null);
-      setSelectedId(null);
-
-      await loadTricounts();
-    } catch (e) {
-      console.error(e);
-      setError(e.message || "Erreur réseau lors de la suppression.");
-    }
-  }
-
 
   const balances = selectedTricount?.balances || {};
   const settlements = selectedTricount?.settlements || [];
-
 
   return (
     <div className="max-w-6xl mx-auto flex gap-6 px-6 py-8">
