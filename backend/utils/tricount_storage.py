@@ -12,6 +12,7 @@ DATA_FILE = Path("data/tricounts.json")
 def tricount_to_dict(tricount: Tricount) -> dict:
     return {
         "id": tricount.id,
+        "owner_auth_id": tricount.owner_auth_id,
         "name": tricount.name,
         "currency": tricount.currency.value,
         "users": [
@@ -41,6 +42,7 @@ def tricount_to_dict(tricount: Tricount) -> dict:
 def tricount_from_dict(data: dict) -> Tricount:
     tricount = Tricount(
         id=data["id"],
+        owner_auth_id=data.get("owner_auth_id", ""),
         name=data["name"],
         currency=Currency(data["currency"]),
     )

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, abort, jsonify, request, send_file
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from backend.models.currency import Currency
@@ -14,13 +14,27 @@ tricount_bp = Blueprint("tricounts", __name__)
 tricounts = load_tricounts()
 
 
-def find_tricount(tricount_id: str) -> Tricount | None:
-    """Helper to find a tricount object by ID in our list."""
-    return next((t for t in tricounts if t.id == tricount_id), None)
+def get_authorized_tricount(
+    tricount_id: str, owner_level: bool = False
+) -> Tricount:
+    user_auth_id = get_jwt_identity()
+
+    t = next((t for t in tricounts if t.id == tricount_id), None)
+    if not t:
+        abort(404, "Not found")
+
+    if not (
+        t.owner_auth_id == user_auth_id
+        or (
+            any(u.auth_id == user_auth_id for u in t.users) and not owner_level
+        )
+    ):
+        abort(403, "Forbidden")
+
+    return t
 
 
 def tricount_with_balances_to_dict(tricount: Tricount) -> dict:
-    """Helper to format the full tricount response with calculated balances."""
     balances = compute_balances(tricount)
     settlements_raw = compute_settlements(balances)
 
@@ -92,19 +106,17 @@ def create_tricount():
 
 
 @tricount_bp.route("/<tricount_id>", methods=["GET"])
+@jwt_required()
 def get_tricount(tricount_id: str):
-    t = find_tricount(tricount_id)
-    if t is None:
-        return jsonify({"error": "Not found"}), 404
-
+    t = get_authorized_tricount(tricount_id)
     return jsonify(tricount_with_balances_to_dict(t))
 
 
 @tricount_bp.route("/<tricount_id>/users", methods=["POST"])
+@jwt_required()
 def add_user(tricount_id: str):
-    t = find_tricount(tricount_id)
-    if t is None:
-        return jsonify({"error": "Not found"}), 404
+    t = get_authorized_tricount(tricount_id)
+    user_auth_id = get_jwt_identity()
 
     payload = request.get_json() or {}
     name = (payload.get("name") or "").strip()
@@ -113,15 +125,7 @@ def add_user(tricount_id: str):
     if not name:
         return jsonify({"error": "Name is required"}), 400
 
-    user = t.add_user(name=name, email=email)
-    if email:
-        registered_users = load_users()
-        matched_account = next(
-            (u for u in registered_users if u.email == email), None
-        )
-
-        if matched_account:
-            user.auth_id = matched_account.id
+    user = t.add_user(name=name, auth_id=user_auth_id)
 
     save_tricounts(tricounts)
 
@@ -139,10 +143,9 @@ def add_user(tricount_id: str):
 
 
 @tricount_bp.route("/<tricount_id>/users/<user_id>", methods=["DELETE"])
+@jwt_required()
 def delete_user(tricount_id: str, user_id: str):
-    t = find_tricount(tricount_id)
-    if t is None:
-        return jsonify({"error": "Not found"}), 404
+    t = get_authorized_tricount(tricount_id)
 
     for e in t.expenses:
         if e.payer_id == user_id or user_id in e.participants_ids:
@@ -160,10 +163,9 @@ def delete_user(tricount_id: str, user_id: str):
 
 
 @tricount_bp.route("/<tricount_id>/expenses", methods=["POST"])
+@jwt_required()
 def add_expense(tricount_id: str):
-    t = find_tricount(tricount_id)
-    if t is None:
-        return jsonify({"error": "Not found"}), 404
+    t = get_authorized_tricount(tricount_id)
 
     payload = request.get_json() or {}
     description = (payload.get("description") or "").strip()
@@ -194,10 +196,9 @@ def add_expense(tricount_id: str):
 
 
 @tricount_bp.route("/<tricount_id>/expenses/<expense_id>", methods=["DELETE"])
+@jwt_required()
 def delete_expense(tricount_id: str, expense_id: str):
-    t = find_tricount(tricount_id)
-    if t is None:
-        return jsonify({"error": "Not found"}), 404
+    t = get_authorized_tricount(tricount_id)
 
     t.expenses = [e for e in t.expenses if e.id != expense_id]
     save_tricounts(tricounts)
@@ -206,15 +207,12 @@ def delete_expense(tricount_id: str, expense_id: str):
 
 
 @tricount_bp.route("/<tricount_id>/export/excel", methods=["GET"])
+@jwt_required()
 def export_tricount_excel(tricount_id: str):
-    tricount = find_tricount(tricount_id)
-    if tricount is None:
-        return jsonify({"error": "Not found"}), 404
+    t = get_authorized_tricount(tricount_id)
 
-    output = export_tricount_to_excel(tricount)
-    filename = (
-        f"tricount_{(tricount.name or tricount.id).replace(' ', '_')}.xlsx"
-    )
+    output = export_tricount_to_excel(t)
+    filename = f"tricount_{(t.name or t.id).replace(' ', '_')}.xlsx"
 
     return send_file(
         output,
@@ -225,14 +223,17 @@ def export_tricount_excel(tricount_id: str):
 
 
 @tricount_bp.route("/<tricount_id>", methods=["DELETE"])
+@jwt_required()
 def delete_tricount(tricount_id: str):
-
-    tricount = find_tricount(tricount_id)
-    if tricount is None:
-        return jsonify({"error": "Tricount introuvable"}), 404
+    if not get_authorized_tricount(tricount_id):
+        return (
+            jsonify(
+                {"error": "You are not authorized to delete this tricount"}
+            ),
+            404,
+        )
 
     tricounts[:] = [t for t in tricounts if t.id != tricount_id]
-
     save_tricounts(tricounts)
 
     return "", 204
