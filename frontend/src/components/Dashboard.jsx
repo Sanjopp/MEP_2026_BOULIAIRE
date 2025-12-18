@@ -81,6 +81,8 @@ export default function Dashboard({ user, onLogout }) {
         name: userName,
         email: userEmail || null,
       });
+      setUserName("");
+      setUserEmail("");
       await loadTricountDetail(selectedTricount.id);
       await loadTricounts();
     } catch (e) {
@@ -90,8 +92,36 @@ export default function Dashboard({ user, onLogout }) {
 
   async function handleAddExpense(e) {
     e.preventDefault();
+    if (!selectedTricount) return;
+
+    if (!desc.trim() || !amount || !payerId || participants.length === 0) {
+      setError("Merci de remplir tous les champs (et au moins un participant).");
+      return;
+    }
+
+    const payload = {
+      description: desc.trim(),
+      amount: parseFloat(amount),
+      payer_id: payerId,
+      participants_ids: participants,
+      weights: {},
+    };
+
+    if (splitMode === "weighted") {
+        const weightMap = {};
+        participants.forEach((uid) => {
+          weightMap[uid] = parseFloat(weights[uid]) || 0;
+        });
+        payload.weights = weightMap;
+      }
+
     try {
       await addExpense(selectedTricount.id, payload);
+      setDesc("");
+      setAmount("");
+      setPayerId("");
+      setParticipants([]);
+      setWeights({});
       await loadTricountDetail(selectedTricount.id);
       await loadTricounts();
     } catch (e) {
@@ -145,6 +175,12 @@ export default function Dashboard({ user, onLogout }) {
     } catch (e) {
       setError("Erreur export Excel.");
     }
+  }
+
+  function toggleParticipant(id) {
+    setParticipants((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   const balances = selectedTricount?.balances || {};
