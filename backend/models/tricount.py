@@ -9,14 +9,15 @@ from .user import User
 @dataclass
 class Tricount:
     id: str = field(default_factory=lambda: str(uuid4()))
+    owner_auth_id: str = ""
     name: str = ""
     currency: Currency = Currency.EUR
 
     users: list[User] = field(default_factory=list)
     expenses: list[Expense] = field(default_factory=list)
 
-    def add_user(self, name: str, email: str | None = None) -> User:
-        user = User(name=name, email=email)
+    def add_user(self, name: str, auth_id: str) -> User:
+        user = User(name=name, auth_id=auth_id)
         self.users.append(user)
         return user
 
@@ -44,3 +45,10 @@ class Tricount:
 
     def get_user(self, user_id: str) -> User | None:
         return next((u for u in self.users if u.id == user_id), None)
+
+    def modify_user_auth_id(self, user_id: str, auth_id: str) -> User | None:
+        user = self.get_user(user_id)
+        if user:
+            user.auth_id = auth_id
+            return user
+        return None
