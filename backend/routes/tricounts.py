@@ -48,7 +48,12 @@ def tricount_with_balances_to_dict(tricount: Tricount) -> dict:
         "name": tricount.name,
         "currency": tricount.currency.value,
         "users": [
-            {"id": u.id, "name": u.name, "email": u.email}
+            {
+                "id": u.id,
+                "name": u.name,
+                "email": u.email,
+                "auth_id": u.auth_id,
+            }
             for u in tricount.users
         ],
         "expenses": [

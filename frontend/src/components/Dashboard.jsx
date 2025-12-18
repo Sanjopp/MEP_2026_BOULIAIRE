@@ -523,7 +523,12 @@ export default function Dashboard({ user, onLogout }) {
                      {selectedTricount.users.map(u => (
                         <div key={u.id} className="flex justify-between items-center text-xs bg-slate-50 p-2 rounded dark:bg-slate-800/70">
                            <div>
-                              <div className="font-medium">{u.name}</div>
+                              <div className="font-medium">
+                                {u.name}
+                                {u.auth_id === user?.id && (
+                                  <span className="ml-1 text-[10px] text-emerald-500">(moi)</span>
+                                )}
+                              </div>
                               <div className="text-[10px] text-slate-400">{u.email}</div>
                            </div>
                            <button onClick={() => handleDeleteUser(u.id)} className="text-red-400 hover:text-red-600">×</button>
