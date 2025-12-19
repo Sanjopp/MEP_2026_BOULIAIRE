@@ -8,6 +8,3 @@ class User:
     name: str = ""
     email: str | None = None
     auth_id: str | None = None
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.id})"

@@ -24,7 +24,7 @@ app.register_blueprint(tricount_bp, url_prefix="/api/tricounts")
 
 @app.route("/")
 def api_root():
-    return jsonify({"status": "ok", "message": "Tricount API running"})
+    return jsonify({"status": "ok", "message": "3Comptes API running"})
 
 
 if __name__ == "__main__":
