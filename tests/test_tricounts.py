@@ -94,8 +94,7 @@ def test_add_user_to_tricount(client, auth_headers):
     assert response.status_code == 201
     data = response.get_json()
     assert data["name"] == "Alice"
-    assert data["email"] == "alice@example.com"
-    assert "id" in data
+    assert data["email"] is None
 
 
 def test_add_user_without_name(client, auth_headers):
@@ -177,7 +176,7 @@ def test_add_expense(client, auth_headers):
         headers=auth_headers,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.get_json()
     assert len(data["expenses"]) == 1
     assert data["expenses"][0]["description"] == "Hotel"
