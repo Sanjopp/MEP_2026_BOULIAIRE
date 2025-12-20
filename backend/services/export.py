@@ -43,14 +43,14 @@ def export_tricount_to_excel(tricount: Tricount) -> BytesIO:
     ws_bal = wb.create_sheet(title="Soldes")
     ws_bal.append(["Utilisateur", "Solde"])
 
-    balances = compute_balances(tricount)
+    balances = compute_balances(tricount=tricount)
     for user in tricount.users:
         ws_bal.append([user.name, round(balances.get(user.id, 0.0), 2)])
 
     ws_set = wb.create_sheet(title="Règlements")
     ws_set.append(["De", "Vers", "Montant"])
 
-    settlements = compute_settlements(balances)
+    settlements = compute_settlements(balances=balances)
     for from_id, to_id, amount in settlements:
         from_name = ""
         to_name = ""
