@@ -165,7 +165,7 @@ export default function Dashboard({ user, onLogout }) {
   }
 
   async function handleDeleteTricount() {
-    if (!window.confirm("Supprimer ce tricount ?")) return;
+    if (!window.confirm("Supprimer ce 3Compte ?")) return;
     try {
       await deleteTricount(selectedTricount.id);
       setSelectedTricount(null);
@@ -197,7 +197,7 @@ export default function Dashboard({ user, onLogout }) {
       const data = await inviteTricount(selectedTricount.id);
 
       window.prompt(
-        "Partager cet identifiant pour rejoindre le tricount :",
+        "Partager cet identifiant pour rejoindre le 3Compte :",
         data.tricount_id
       );
     } catch (e) {
@@ -218,7 +218,7 @@ export default function Dashboard({ user, onLogout }) {
       );
 
       if (alreadyJoined) {
-        setError("Vous avez déjà rejoint ce tricount.");
+        setError("Vous avez déjà rejoint ce 3Compte.");
         return;
       }
 
@@ -314,11 +314,11 @@ export default function Dashboard({ user, onLogout }) {
 
         <div className="flex-1 flex flex-col gap-2 overflow-hidden">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            Mes tricounts
+            Mes 3Comptes
           </h2>
           <div className="flex-1 overflow-y-auto pr-1">
             {tricounts.length === 0 ? (
-              <p className="text-xs text-slate-500">Aucun tricount.</p>
+              <p className="text-xs text-slate-500">Aucun 3Compte.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {tricounts.map((t) => (
@@ -350,7 +350,7 @@ export default function Dashboard({ user, onLogout }) {
         <div className="border-t border-slate-200 pt-3 space-y-4 dark:border-slate-800">
           <div>
             <h3 className="text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">
-              Nouveau tricount
+              Nouveau 3Compte
             </h3>
             <form onSubmit={handleCreateTricount} className="space-y-2">
               <input
@@ -373,7 +373,7 @@ export default function Dashboard({ user, onLogout }) {
         <div className="border-t border-slate-200 pt-3 space-y-4 dark:border-slate-800">
           <div>
             <h3 className="text-xs font-semibold mb-2 text-slate-700 dark:text-slate-300">
-              Rejoindre un tricount existant
+              Rejoindre un 3Compte existant
             </h3>
 
             {joinStep === "idle" && (
@@ -383,7 +383,7 @@ export default function Dashboard({ user, onLogout }) {
               >
                 <input
                   type="text"
-                  placeholder="ID du tricount"
+                  placeholder="ID du 3Compte"
                   value={joinTricountId}
                   onChange={(e) => setJoinTricountId(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-emerald-500 dark:bg-slate-900 dark:border-slate-700"
@@ -462,7 +462,7 @@ export default function Dashboard({ user, onLogout }) {
       <main className="flex-1 flex flex-col gap-4">
         {!selectedTricount && !loadingDetail && (
           <div className="h-full flex items-center justify-center text-slate-500 text-sm">
-            Sélectionne un tricount à gauche.
+            Sélectionne un 3Compte à gauche.
           </div>
         )}
         {loadingDetail && <div className="text-center text-slate-400 text-sm">Chargement...</div>}

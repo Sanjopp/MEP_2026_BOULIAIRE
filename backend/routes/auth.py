@@ -28,9 +28,7 @@ def register():
     save_users(users=auth_users)
 
     return (
-        jsonify(
-            {"message": "Utilisateur créé avec succès", "id": new_auth_user.id}
-        ),
+        jsonify({"id": new_auth_user.id}),
         201,
     )
 

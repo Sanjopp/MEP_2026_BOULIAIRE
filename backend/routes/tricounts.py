@@ -84,7 +84,12 @@ def add_user(tricount_id: str):
         return jsonify({"error": "Un nom est requis"}), 400
 
     if any(u.name == name for u in tricount.users):
-        return jsonify({"error": "Ce nom est déjà utilisé"}), 409
+        return (
+            jsonify(
+                {"error": "Ce nom est déjà utilisé par un autre utilisateur"}
+            ),
+            409,
+        )
 
     user = tricount.add_user(name=name, email=email)
 
@@ -212,18 +217,12 @@ def export_tricount_excel(tricount_id: str):
 @tricount_bp.route("/<tricount_id>", methods=["DELETE"])
 @jwt_required()
 def delete_tricount(tricount_id: str):
-    if not get_tricount_from_id_with_permissions(
+    tricount = get_tricount_from_id_with_permissions(
         tricount_id=tricount_id,
         tricounts=tricounts,
         user_email=get_jwt_identity(),
         owner_needed=True,
-    ):
-        return (
-            jsonify(
-                {"error": "Vous n'êtes pas autorisé à supprimer ce 3compte"}
-            ),
-            404,
-        )
+    )
 
     tricounts[:] = [t for t in tricounts if t.id != tricount_id]
     save_tricounts(tricounts=tricounts)
