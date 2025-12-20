@@ -16,17 +16,16 @@ def register():
     name = data.get("name")
 
     if not email or not password or not name:
-        return jsonify({"error": "Email, mot de passe ou Nom manquant"}), 400
+        return jsonify({"error": "Email, mot de passe ou nom manquant"}), 400
 
     auth_users = load_users()
     if any(u.email == email for u in auth_users):
         return jsonify({"error": "Cet email est déjà utilisé"}), 409
-
     hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
 
     new_auth_user = AuthUser(email=email, password_hash=hashed_pw, name=name)
     auth_users.append(new_auth_user)
-    save_users(auth_users)
+    save_users(users=auth_users)
 
     return (
         jsonify(
@@ -52,7 +51,7 @@ def login():
     if auth_user and bcrypt.check_password_hash(
         auth_user.password_hash, password
     ):
-        access_token = create_access_token(identity=auth_user.id)
+        access_token = create_access_token(identity=auth_user.email)
 
         return (
             jsonify(
