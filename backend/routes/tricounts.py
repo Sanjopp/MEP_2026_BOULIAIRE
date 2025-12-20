@@ -84,7 +84,12 @@ def add_user(tricount_id: str):
         return jsonify({"error": "Un nom est requis"}), 400
 
     if any(u.name == name for u in tricount.users):
-        return jsonify({"error": "Ce nom est déjà utilisé"}), 409
+        return (
+            jsonify(
+                {"error": "Ce nom est déjà utilisé par un autre utilisateur"}
+            ),
+            409,
+        )
 
     user = tricount.add_user(name=name, email=email)
 
