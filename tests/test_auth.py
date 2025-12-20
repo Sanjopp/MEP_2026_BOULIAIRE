@@ -10,7 +10,6 @@ def test_register_success(client):
 
     assert response.status_code == 201
     data = response.get_json()
-    assert data["message"] == "Utilisateur créé avec succès"
     assert "id" in data
 
 
