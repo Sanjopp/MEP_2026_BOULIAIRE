@@ -170,6 +170,11 @@ For more informations on the architecture of the backend and the frontend, you c
 - [Backend](backend/README.md)
 - [Frontend](frontend/README.md)
 
+## Project structure
+
+See `docs/structure.md`.
+
+
 ## To Be Done
 
 This project was completed within a limited timeframe, and we identified several aspects we would have liked to improve but did not have enough time to address. Among these, the most important are:
